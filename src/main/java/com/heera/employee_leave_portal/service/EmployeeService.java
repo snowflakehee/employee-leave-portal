@@ -32,7 +32,7 @@ public class EmployeeService {
         return employeeRepository.findAll();
     }
 
-    //@Cacheable(value = "employees", key = "#id")
+    @Cacheable(value = "employees", key = "#id")
     public Employee getEmployeeById(Long id) {
         return employeeRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Employee not found with id " + id));
