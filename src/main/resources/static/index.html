@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Employee Leave Portal</title>
+<style>
+  :root {
+    --ink: #1c1f26;
+    --ink-soft: #5a6072;
+    --line: #e2e5ec;
+    --bg: #f7f8fa;
+    --card: #ffffff;
+    --accent: #2f5fd6;
+    --accent-ink: #14295c;
+    --danger: #b3261e;
+    --success: #1c7c4c;
+    --radius: 10px;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+  }
+  header {
+    background: var(--accent-ink);
+    color: #fff;
+    padding: 16px 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  header h1 { font-size: 16px; font-weight: 600; margin: 0; letter-spacing: 0.2px; }
+  header .who { font-size: 13px; opacity: 0.85; display: flex; align-items: center; gap: 12px; }
+  header button {
+    background: transparent;
+    border: 1px solid rgba(255,255,255,0.35);
+    color: #fff;
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+  }
+  header button:hover { background: rgba(255,255,255,0.1); }
+
+  main { max-width: 960px; margin: 0 auto; padding: 24px; }
+
+  .login-wrap {
+    max-width: 380px;
+    margin: 80px auto;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 32px;
+  }
+  .login-wrap h2 { margin: 0 0 4px; font-size: 18px; }
+  .login-wrap p.sub { margin: 0 0 24px; color: var(--ink-soft); font-size: 13px; }
+
+  label { display: block; font-size: 12px; color: var(--ink-soft); margin: 14px 0 6px; }
+  input, select {
+    width: 100%;
+    padding: 9px 11px;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    font-size: 14px;
+    background: #fff;
+    color: var(--ink);
+  }
+  input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+  .btn {
+    display: inline-block;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    padding: 10px 16px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    margin-top: 16px;
+  }
+  .btn:hover { opacity: 0.92; }
+  .btn.secondary { background: #fff; color: var(--accent); border: 1px solid var(--accent); }
+  .btn.small { padding: 6px 10px; font-size: 12px; margin-top: 0; }
+  .btn.reject { background: var(--danger); }
+  .btn.approve { background: var(--success); }
+
+  .error { color: var(--danger); font-size: 13px; margin-top: 10px; }
+  .hint { color: var(--ink-soft); font-size: 12px; margin-top: 8px; }
+
+  .config-line { display: flex; gap: 8px; align-items: center; margin-bottom: 20px; }
+  .config-line input { flex: 1; font-size: 12px; padding: 6px 8px; }
+  .config-line span { font-size: 11px; color: var(--ink-soft); white-space: nowrap; }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin-bottom: 20px;
+  }
+  .card h3 { margin: 0 0 4px; font-size: 15px; }
+  .card p.desc { margin: 0 0 16px; font-size: 13px; color: var(--ink-soft); }
+
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { text-align: left; padding: 9px 10px; border-bottom: 1px solid var(--line); }
+  th { color: var(--ink-soft); font-weight: 500; font-size: 12px; text-transform: uppercase; letter-spacing: 0.03em; }
+  tr:last-child td { border-bottom: none; }
+  .empty-row td { color: var(--ink-soft); text-align: center; padding: 24px; font-style: italic; }
+
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 600; }
+  .badge.PENDING { background: #fff3cd; color: #8a6300; }
+  .badge.APPROVED { background: #d9f2e3; color: var(--success); }
+  .badge.REJECTED { background: #fbdedb; color: var(--danger); }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .row-actions { display: flex; gap: 6px; }
+
+  .hidden { display: none !important; }
+  #toast {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: var(--accent-ink);
+    color: #fff;
+    padding: 10px 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    opacity: 0;
+    transform: translateY(8px);
+    transition: opacity 0.2s, transform 0.2s;
+    pointer-events: none;
+  }
+  #toast.show { opacity: 1; transform: translateY(0); }
+</style>
+</head>
+<body>
+
+<div id="loginScreen" class="login-wrap">
+  <h2>Employee Leave Portal</h2>
+  <p class="sub">Sign in to continue</p>
+
+  <div class="config-line">
+    <span>API base:</span>
+    <input id="apiBase" type="text" placeholder="Leave blank to use this same server">
+  </div>
+
+  <label for="loginUsername">Username</label>
+  <input id="loginUsername" type="text" autocomplete="username">
+
+  <label for="loginPassword">Password</label>
+  <input id="loginPassword" type="password" autocomplete="current-password">
+
+  <button class="btn" style="width:100%" onclick="login()">Sign in</button>
+  <div id="loginError" class="error hidden"></div>
+  <p class="hint">Free-tier hosting — the first request after inactivity can take up to a minute to wake the server.</p>
+</div>
+
+<div id="appScreen" class="hidden">
+  <header>
+    <h1>Employee Leave Portal</h1>
+    <div class="who">
+      <span id="whoami"></span>
+      <button onclick="logout()">Sign out</button>
+    </div>
+  </header>
+
+  <main>
+    <div class="card">
+      <h3>Apply for leave</h3>
+      <p class="desc">Submitted as the currently signed-in user.</p>
+      <div class="grid-2">
+        <div>
+          <label for="leaveType">Leave type</label>
+          <select id="leaveType">
+            <option value="CASUAL">Casual</option>
+            <option value="SICK">Sick</option>
+            <option value="EARNED">Earned</option>
+          </select>
+        </div>
+        <div></div>
+        <div>
+          <label for="startDate">Start date</label>
+          <input id="startDate" type="date">
+        </div>
+        <div>
+          <label for="endDate">End date</label>
+          <input id="endDate" type="date">
+        </div>
+      </div>
+      <button class="btn" onclick="applyLeave()">Submit request</button>
+      <div id="applyError" class="error hidden"></div>
+    </div>
+
+    <div id="pendingCard" class="card hidden">
+      <h3>Pending approvals</h3>
+      <p class="desc">Requests waiting for a manager decision.</p>
+      <table>
+        <thead>
+          <tr><th>Employee</th><th>Type</th><th>Dates</th><th>Status</th><th></th></tr>
+        </thead>
+        <tbody id="pendingBody"></tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <h3>Employees</h3>
+      <p class="desc">All employees on record.</p>
+      <table>
+        <thead>
+          <tr><th>Name</th><th>Email</th><th>Designation</th><th>Department</th><th>Leave balance</th></tr>
+        </thead>
+        <tbody id="employeeBody"></tbody>
+      </table>
+    </div>
+  </main>
+</div>
+
+<div id="toast"></div>
+
+<script>
+  let TOKEN = localStorage.getItem('elp_token') || null;
+  let ROLE = localStorage.getItem('elp_role') || null;
+  let USERNAME = localStorage.getItem('elp_username') || null;
+
+  function apiBase() {
+    const val = document.getElementById('apiBase').value.trim();
+    return val ? val.replace(/\/$/, '') : window.location.origin;
+  }
+
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2500);
+  }
+
+  async function api(path, options = {}) {
+    const headers = Object.assign({ 'Content-Type': 'application/json' }, options.headers || {});
+    if (TOKEN) headers['Authorization'] = 'Bearer ' + TOKEN;
+    const res = await fetch(apiBase() + path, Object.assign({}, options, { headers }));
+    let data = null;
+    try { data = await res.json(); } catch (e) { /* no body */ }
+    if (!res.ok) {
+      const message = (data && (data.error || data.message)) || ('Request failed (' + res.status + ')');
+      throw new Error(message);
+    }
+    return data;
+  }
+
+  async function login() {
+    const username = document.getElementById('loginUsername').value.trim();
+    const password = document.getElementById('loginPassword').value;
+    const errBox = document.getElementById('loginError');
+    errBox.classList.add('hidden');
+
+    if (!username || !password) {
+      errBox.textContent = 'Enter a username and password.';
+      errBox.classList.remove('hidden');
+      return;
+    }
+
+    try {
+      const data = await api('/api/auth/login', {
+        method: 'POST',
+        body: JSON.stringify({ username, password })
+      });
+      TOKEN = data.token;
+      USERNAME = username;
+      ROLE = parseRoleFromToken(TOKEN);
+      localStorage.setItem('elp_token', TOKEN);
+      localStorage.setItem('elp_role', ROLE || '');
+      localStorage.setItem('elp_username', USERNAME);
+      enterApp();
+    } catch (e) {
+      errBox.textContent = e.message;
+      errBox.classList.remove('hidden');
+    }
+  }
+
+  function parseRoleFromToken(token) {
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      return payload.role || null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function logout() {
+    TOKEN = null; ROLE = null; USERNAME = null;
+    localStorage.removeItem('elp_token');
+    localStorage.removeItem('elp_role');
+    localStorage.removeItem('elp_username');
+    document.getElementById('appScreen').classList.add('hidden');
+    document.getElementById('loginScreen').classList.remove('hidden');
+  }
+
+  function enterApp() {
+    document.getElementById('loginScreen').classList.add('hidden');
+    document.getElementById('appScreen').classList.remove('hidden');
+    document.getElementById('whoami').textContent = USERNAME + ' · ' + (ROLE || 'user');
+    if (ROLE === 'MANAGER' || ROLE === 'ADMIN') {
+      document.getElementById('pendingCard').classList.remove('hidden');
+      loadPending();
+    }
+    loadEmployees();
+  }
+
+  async function loadEmployees() {
+    const body = document.getElementById('employeeBody');
+    body.innerHTML = '<tr class="empty-row"><td colspan="5">Loading…</td></tr>';
+    try {
+      const employees = await api('/api/employees');
+      if (!employees.length) {
+        body.innerHTML = '<tr class="empty-row"><td colspan="5">No employees yet.</td></tr>';
+        return;
+      }
+      body.innerHTML = employees.map(e => `
+        <tr>
+          <td>${escapeHtml(e.name || '')}</td>
+          <td>${escapeHtml(e.email || '')}</td>
+          <td>${escapeHtml(e.designation || '')}</td>
+          <td>${escapeHtml((e.department && e.department.name) || '—')}</td>
+          <td>${e.leaveBalance ?? '—'}</td>
+        </tr>
+      `).join('');
+    } catch (e) {
+      body.innerHTML = '<tr class="empty-row"><td colspan="5">' + escapeHtml(e.message) + '</td></tr>';
+    }
+  }
+
+  async function loadPending() {
+    const body = document.getElementById('pendingBody');
+    body.innerHTML = '<tr class="empty-row"><td colspan="5">Loading…</td></tr>';
+    try {
+      const requests = await api('/api/leaves/pending');
+      if (!requests.length) {
+        body.innerHTML = '<tr class="empty-row"><td colspan="5">Nothing pending.</td></tr>';
+        return;
+      }
+      body.innerHTML = requests.map(r => `
+        <tr>
+          <td>${escapeHtml((r.employee && r.employee.name) || '—')}</td>
+          <td>${escapeHtml(r.leaveType || '')}</td>
+          <td>${escapeHtml(r.startDate || '')} → ${escapeHtml(r.endDate || '')}</td>
+          <td><span class="badge ${r.status}">${r.status}</span></td>
+          <td class="row-actions">
+            <button class="btn small approve" onclick="review(${r.id}, 'APPROVED')">Approve</button>
+            <button class="btn small reject" onclick="review(${r.id}, 'REJECTED')">Reject</button>
+          </td>
+        </tr>
+      `).join('');
+    } catch (e) {
+      body.innerHTML = '<tr class="empty-row"><td colspan="5">' + escapeHtml(e.message) + '</td></tr>';
+    }
+  }
+
+  async function review(id, decision) {
+    try {
+      await api('/api/leaves/' + id + '/review', {
+        method: 'PUT',
+        body: JSON.stringify({ decision, comment: decision === 'APPROVED' ? 'Approved via demo UI' : 'Rejected via demo UI' })
+      });
+      showToast('Request ' + decision.toLowerCase());
+      loadPending();
+      loadEmployees();
+    } catch (e) {
+      showToast(e.message);
+    }
+  }
+
+  async function applyLeave() {
+    const leaveType = document.getElementById('leaveType').value;
+    const startDate = document.getElementById('startDate').value;
+    const endDate = document.getElementById('endDate').value;
+    const errBox = document.getElementById('applyError');
+    errBox.classList.add('hidden');
+
+    if (!startDate || !endDate) {
+      errBox.textContent = 'Choose a start and end date.';
+      errBox.classList.remove('hidden');
+      return;
+    }
+
+    try {
+      await api('/api/leaves', {
+        method: 'POST',
+        body: JSON.stringify({ leaveType, startDate, endDate })
+      });
+      showToast('Leave request submitted');
+      if (ROLE === 'MANAGER' || ROLE === 'ADMIN') loadPending();
+    } catch (e) {
+      errBox.textContent = e.message;
+      errBox.classList.remove('hidden');
+    }
+  }
+
+  function escapeHtml(str) {
+    return String(str).replace(/[&<>"']/g, s => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    }[s]));
+  }
+
+  if (TOKEN) enterApp();
+</script>
+
+</body>
+</html>
