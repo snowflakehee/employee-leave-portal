@@ -57,3 +57,12 @@ jobs:
           tags: |
             ghcr.io/${{ github.repository_owner }}/employee-leave-portal:latest
             ghcr.io/${{ github.repository_owner }}/employee-leave-portal:${{ github.sha }}
+
+  deploy:
+    needs: [build, docker]
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+
+    steps:
+      - name: Trigger Render Deploy
+        run: curl -X POST "${{ secrets.RENDER_DEPLOY_HOOK }}"
