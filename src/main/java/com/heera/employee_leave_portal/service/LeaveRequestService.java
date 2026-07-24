@@ -36,6 +36,11 @@ public class LeaveRequestService {
         return user.getEmployee();
     }
 
+    public List<LeaveRequest> getMyLeaves() {
+        Employee employee = getCurrentEmployee();
+        return leaveRequestRepository.findByEmployeeId(employee.getId());
+    }
+
     public LeaveRequest applyLeave(LeaveRequest request) {
         Employee employee = getCurrentEmployee();
 

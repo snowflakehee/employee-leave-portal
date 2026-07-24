@@ -37,4 +37,8 @@ public class LeaveRequestController {
         String comment = body.get("comment");
         return leaveRequestService.reviewLeave(id, decision, comment);
     }
+    @GetMapping("/mine")
+    public List<LeaveRequest> getMyLeaves() {
+        return leaveRequestService.getMyLeaves();
+    }
 }

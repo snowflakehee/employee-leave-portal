@@ -6,9 +6,12 @@ import com.heera.employee_leave_portal.repository.EmployeeRepository;
 import com.heera.employee_leave_portal.repository.UserRepository;
 import com.heera.employee_leave_portal.security.JwtUtil;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -42,5 +45,33 @@ public class AuthController {
 
         String token = jwtUtil.generateToken(user.getUsername(), user.getRole().name());
         return Map.of("token", token);
+    }
+
+    @GetMapping("/me")
+    public Map<String, Object> me() {
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("username", user.getUsername());
+        result.put("role", user.getRole());
+        result.put("employee", user.getEmployee());
+        return result;
+    }
+
+    @GetMapping("/users")
+    public List<User> getAllUsers() {
+        return userRepository.findAll();
+    }
+
+    @PutMapping("/link-employee/{userId}")
+    public User linkEmployee(@PathVariable Long userId, @RequestBody Map<String, Long> body) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        Employee employee = employeeRepository.findById(body.get("employeeId"))
+                .orElseThrow(() -> new RuntimeException("Employee not found"));
+        user.setEmployee(employee);
+        return userRepository.save(user);
     }
 }
